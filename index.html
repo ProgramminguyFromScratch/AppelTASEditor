@@ -1,52 +1,445 @@
 <!DOCTYPE html>
+<meta charset="UTF-8">
 <html>
 <head>
-    <title>Appel</title>
+    <title>Appel TAS Editor</title>
     <style>
-        body { 
-            margin: 0; 
-            background: #111; 
-            overflow: hidden; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            font-family: Arial, sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        canvas { 
-            background: #000; 
-            border: 2px solid #444; 
-        }
-        #info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
+
+        body {
+            background: #000;
             color: #fff;
-            background: rgba(0,0,0,0.7);
+            font-family: monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #ffff00;
+            overflow: hidden;
+        }
+
+        .bottom-section {
+            display: flex;
+            flex: 1;
+            gap: 15px;
             padding: 10px;
-            border-radius: 5px;
+            border-top: 2px solid #00ff55;
+            background: #0a0a0a;
+            overflow: hidden;
+        }
+
+        #playerState {
+            padding: 15px;
+            background: #0a0a0a;
+            flex: 1;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            align-content: start;
+        }
+
+        .info-panels {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 0 0 auto;
+        }
+
+        .controls,
+        .status-display {
+            position: static;
+            background: rgba(20, 20, 20, 0.9);
+            border: 2px solid #ffff00;
+            padding: 12px;
             font-size: 12px;
+            line-height: 1.6;
+            z-index: 1000;
+        }
+
+        .status-display {
+            border: 2px solid #00ff55;
+        }
+
+        .state-section {
+            margin-bottom: 15px;
+            padding: 8px;
+            background: #111;
+            border-left: 3px solid #00ff55;
+        }
+
+        .state-key   { color: #ffff00; }
+        .state-value { color: #00ff55; }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .right-panel > div {
+            padding: 10px;
+            border-bottom: 2px solid #ffff00;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            color: #ffff00;
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #levelCodeInput  { flex: 0 0 auto; }
+        #inputEditorSection { flex: 1 1 auto; }
+        #replayCodeSection  { flex: 0 0 auto; }
+
+        input[type="text"],
+        textarea {
+            background: #111;
+            color: #00ff55;
+            border: 1px solid #ffff00;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 15px;
+            resize: none;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border: 1px solid #00ff55;
+            box-shadow: 0 0 5px rgba(0, 255, 85, 0.3);
+        }
+
+        input[type="text"] {
+            flex: 0 0 auto;
+            height: 24px;
+        }
+
+        #inputEditorWrapper {
+            flex: 1 1 auto;
+            margin-top: 5px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #inputEditor {
+            flex: 1 1 auto;
+            color: transparent;
+            caret-color: #00ff55;
+            position: relative;
+            z-index: 1;
+            background: #111;
+            border: 1px solid transparent;
+        }
+        #inputEditor::placeholder {
+            color: #00ff55;
+            opacity: 1;
+        }
+
+        #inputHighlightOverlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 2;
+            font-family: monospace;
+            font-size: 15px;
+            line-height: inherit;
+            padding: 8px;
+            margin: 0;
+            color: #00ff55;
+            background: transparent;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: hidden;
+            border: 1px solid transparent;
+            box-sizing: border-box;
+        }
+
+        .current-token {
+            background: rgba(255, 255, 0, 0.28);
+            color: #ffff00;
+            border-radius: 3px;
+            outline: 1px solid rgba(255, 255, 0, 0.6);
+        }
+
+        .paren-syntax { color: #ff9900; }
+
+        #replayCode {
+            flex: 0 0 auto;
+            height: 80px;
+            margin-top: 5px;
+            background: #0a0a0a;
+            color: #ffff00;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: #000;
+            border-bottom: 2px solid #ffff00;
+        }
+
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 6px;
+        }
+
+        .control-key  { color: #ffff00; min-width: 50px; font-weight: bold; }
+        .control-desc { color: #00ff55; text-align: right; }
+
+        .status-item {
+            color: #00ff55;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-item strong { color: #ffff00; }
+
+        .fps-input {
+            width: 50px;
+            background: #111;
+            color: #00ff55;
+            border: 1px solid #ffff00;
+            font-family: monospace;
+            padding: 2px 5px;
+            font-size: 12px;
+            text-align: right;
+        }
+
+        .fps-input:focus {
+            outline: none;
+            border-color: #00ff55;
+        }
+
+        .action-btn {
+            background: #111;
+            color: #00ff55;
+            border: 1px solid #ffff00;
+            padding: 6px 12px;
+            font-family: monospace;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 8px;
+            width: 100%;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .action-btn:hover {
+            background: #222;
+            border-color: #00ff55;
+            box-shadow: 0 0 5px rgba(0, 255, 85, 0.3);
+        }
+
+        #timeline-section {
+            flex-shrink: 0;
+            height: 82px;
+            border-top: 2px solid #ffff00;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #timeline-header {
+            flex-shrink: 0;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            border-bottom: 1px solid #1e1e1e;
+            gap: 12px;
+        }
+
+        #timeline-header .section-title {
+            margin: 0;
+            line-height: 1;
+        }
+
+        #timeline-time {
+            color: #00ff55;
+            font-size: 11px;
+            font-family: monospace;
+            flex: 1;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        #timeline-zoom-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+        }
+
+        #timeline-zoom-wrap label {
+            color: #ffff00;
+            white-space: nowrap;
+        }
+
+        #timelineZoom {
+            width: 72px;
+            accent-color: #ffff00;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        #timeline-track {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            position: relative;
+            cursor: crosshair;
+        }
+
+        #timeline-track::-webkit-scrollbar { height: 4px; }
+        #timeline-track::-webkit-scrollbar-track { background: #111; }
+        #timeline-track::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+        #timelineCanvas {
+            display: block;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+
+        #timeline-playhead {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 2px;
+            background: #ffff00;
+            pointer-events: none;
+            box-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+            will-change: transform;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+
+    <div class="container">
+
+        <div class="left-panel">
+            <canvas id="gameCanvas"></canvas>
+            <div class="bottom-section">
+                <div id="playerState"></div>
+                <div class="info-panels">
+                    <div class="controls">
+                        <div class="control-item">
+                            <span class="control-key">Q</span>
+                            <span class="control-desc">Restart TAS</span>
+                        </div>
+                        <div class="control-item">
+                            <span class="control-key">V</span>
+                            <span class="control-desc">Pause / Frame Step</span>
+                        </div>
+                        <div class="control-item">
+                            <span class="control-key">B</span>
+                            <span class="control-desc">Resume / Unpause</span>
+                        </div>
+                        <div class="control-item">
+                            <span class="control-key">C</span>
+                            <span class="control-desc">Step Back 1 Frame</span>
+                        </div>
+                        <div class="control-item">
+                            <span class="control-key">1-3</span>
+                            <span class="control-desc">Save State</span>
+                        </div>
+                        <div class="control-item">
+                            <span class="control-key">4-6</span>
+                            <span class="control-desc">Load State</span>
+                        </div>
+                    </div>
+                    <div class="status-display">
+                        <div class="status-item"><strong>Frame:</strong> <span id="frameCounter">0</span></div>
+                        <div class="status-item"><strong>Input:</strong> <span id="inputProgress">0/0</span></div>
+                        <div class="status-item">
+                            <strong>FPS:</strong>
+                            <input type="number" id="fpsInput" class="fps-input" value="30" min="1">
+                        </div>
+                        <div class="status-item"><strong>Status:</strong> <span id="statusDisplay">Loading</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div id="levelCodeInput">
+                <div class="section-title">Level Code</div>
+                <input type="text" id="levelCode" placeholder="Paste level code here...">
+            </div>
+            <div id="inputEditorSection">
+                <div class="section-title">Frame Inputs</div>
+                <div id="inputEditorWrapper">
+                    <textarea id="inputEditor"
+                        placeholder="D1 WD5 // press D (or right) for one frame, then press WD for 5&#10;sda8 d7 //comments&#10;_6 // underscore for no keys&#10;6 // also works for no keys&#10;break // pauses the game for you&#10;(D1 SD1)50 // repeat 50 times"></textarea>
+                    <pre id="inputHighlightOverlay" aria-hidden="true"></pre>
+                </div>
+            </div>
+            <div id="replayCodeSection">
+                <div class="section-title">Replay Code</div>
+                <textarea id="replayCode" readonly></textarea>
+                <button id="importReplayBtn" class="action-btn">Import Replay Code</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="timeline-section">
+
+        <div id="timeline-header">
+            <span class="section-title">Timeline</span>
+
+            <span id="timeline-time">0.000s  |  Frame 0</span>
+
+            <div id="timeline-zoom-wrap">
+                <label for="timelineZoom">Zoom</label>
+                <input type="range" id="timelineZoom" min="1" max="20" value="4">
+            </div>
+        </div>
+
+        <div id="timeline-track">
+            <canvas id="timelineCanvas"></canvas>
+            <div id="timeline-playhead"></div>
+        </div>
+
+    </div>
 
     <script src="profiler.js"></script>
     <script src="touching.js"></script>
     <script src="physics.js"></script>
     <script src="levelRenderer.js"></script>
     <script src="game.js"></script>
+    <script src="tas.js"></script>
 
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        let levelCode = params.get("level");
-        if (!levelCode) {
-            levelCode = "1239347128Z18Z1Z20Z1Z18Z1Z2Z2Z20Z1Z10Z2Z17Z4Z10Z4Z21Z1Z17Z3Z2Z2Z18Z1Z2Z1Z17Z1Z10Z2Z17Z4Z2Z1Z21Z4Z18Z1Z2Z1Z10Z8Z17Z5Z2Z1Z17Z2Z10Z2Z17Z2Z18Z1Z17Z1Z18Z1Z17Z4Z20Z1Z17Z14Z18Z1Z17Z3Z2Z1Z17Z4Z20Z1Z17Z6Z2Z1Z17Z2Z2Z29Z17Z1Z10Z2Z3Z2Z2Z1Z10Z2Z18Z1Z10Z2Z2Z2Z17Z1Z10Z2Z17Z2Z18Z1Z10Z2Z20Z1Z17Z1Z10Z4Z20Z1Z17Z1Z20Z1Z10Z2Z3Z1Z9Z2Z3Z1Z10Z10Z21Z1Z68Z2Z20Z1Z10Z2Z21Z1Z20Z1Z10Z2Z17Z1Z10Z2Z20Z1Z21Z1Z68Z2Z18Z1Z10Z2Z20Z1Z17Z3Z18Z1Z20Z1Z17Z4Z20Z1Z17Z2Z20Z1Z17Z2Z2Z1Z17Z2Z18Z1Z17Z1Z20Z1Z17Z2Z2Z1Z20Z1Z17Z1Z20Z1Z2Z4Z17Z2Z2Z28Z20Z1Z10Z2Z21Z1Z2Z2Z18Z1Z21Z1Z2Z1Z10Z2Z21Z1Z2Z1Z68Z1Z20Z1Z18Z1Z17Z1Z20Z1Z17Z1Z10Z2Z9Z2Z10Z2Z21Z1Z18Z1Z2Z2Z21Z1Z10Z2Z18Z1Z9Z2Z21Z1Z10Z2Z9Z1Z12Z1Z77Z1Z9Z2Z77Z1Z9Z1Z21Z1Z2Z2Z68Z2Z10Z2Z79Z4Z20Z1Z10Z2Z21Z1Z68Z2Z2Z2Z10Z2Z21Z1Z20Z1Z18Z1Z10Z2Z2Z2Z21Z1Z18Z1Z20Z1Z17Z1Z20Z1Z2Z1Z21Z2Z17Z2Z20Z3Z21Z1Z2Z2Z20Z1Z2Z1Z18Z1Z2Z7Z17Z1Z2Z28Z1Z5Z15Z1Z1Z3Z2Z1Z4Z3Z68Z1Z1Z3Z15Z1Z1Z6Z25Z1Z1Z1Z9Z1Z12Z1Z1Z4Z11Z1Z12Z1Z1Z2Z25Z1Z1Z7Z12Z1Z1Z1Z8Z3Z1Z1Z11Z1Z15Z1Z16Z1Z7Z1Z79Z2Z21Z1Z7Z1Z9Z1Z1Z5Z9Z1Z10Z2Z20Z1Z2Z1Z10Z2Z7Z1Z9Z1Z1Z3Z9Z1Z1Z1Z11Z1Z1Z11Z11Z1Z1Z2Z4Z5Z1Z1Z2Z1Z17Z3Z1Z34Z15Z1Z1Z3Z3Z1Z1Z3Z4Z1Z1Z12Z7Z2Z1Z7Z24Z1Z1Z1Z12Z1Z1Z2Z15Z1Z1Z1Z17Z1Z68Z1Z18Z1Z1Z3Z5Z1Z2Z3Z3Z1Z1Z7Z77Z1Z10Z2Z21Z1Z2Z2Z21Z1Z1Z4Z4Z1Z7Z1Z4Z1Z1Z6Z4Z1Z7Z1Z1Z7Z2Z1Z20Z2Z18Z1Z15Z2Z17Z4Z1Z35Z22Z1Z1Z2Z15Z1Z1Z1Z22Z1Z1Z1Z9Z1Z1Z2Z22Z1Z1Z3Z22Z1Z1Z1Z15Z1Z1Z2Z22Z1Z15Z2Z1Z2Z22Z1Z1Z6Z24Z1Z1Z3Z4Z1Z2Z1Z68Z1Z5Z1Z1Z3Z16Z1Z1Z1Z15Z1Z11Z1Z1Z1Z12Z1Z1Z1Z15Z1Z1Z3Z15Z1Z1Z2Z25Z1Z1Z9Z15Z1Z1Z3Z4Z2Z1Z1Z12Z1Z11Z1Z1Z1Z12Z1Z1Z1Z4Z2Z1Z2Z7Z1Z20Z1Z68Z1Z17Z2Z21Z1Z20Z1Z17Z4Z1Z64Z12Z1Z1Z1Z69Z1Z1Z2Z7Z1Z2Z1Z21Z1Z5Z1Z15Z1Z9Z1Z1Z4Z22Z1Z1Z13Z9Z1Z1Z2Z4Z2Z1Z2Z4Z1Z5Z1Z1Z4Z15Z1Z1Z6Z15Z1Z78Z1Z1Z3Z2Z1Z68Z1Z2Z1Z10Z2Z20Z1Z17Z4Z1Z68Z18Z1Z2Z1Z68Z2Z12Z1Z9Z1Z3Z1Z9Z1Z1Z17Z4Z1Z1Z2Z15Z1Z1Z2Z12Z1Z1Z1Z16Z1Z1Z2Z4Z2Z1Z5Z4Z2Z1Z4Z7Z1Z2Z2Z20Z1Z10Z2Z18Z1Z20Z1Z2Z1Z20Z1Z17Z1Z1Z66Z12Z2Z1Z3Z11Z1Z12Z1Z1Z1Z9Z1Z1Z18Z15Z1Z1Z7Z11Z1Z1Z2Z7Z1Z1Z3Z4Z1Z1Z1Z12Z1Z1Z1Z11Z1Z12Z1Z1Z2Z4Z1Z18Z1Z2Z1Z21Z1Z2Z2Z68Z2Z2Z4Z1Z31Z5Z1Z1Z3Z5Z1Z1Z3Z5Z1Z1Z3Z5Z1Z1Z3Z5Z1Z1Z3Z5Z1Z1Z3Z5Z1Z1Z3Z5Z1Z1Z3Z14Z1Z1Z29Z15Z1Z1Z14Z15Z1Z1Z6Z15Z4Z1Z2Z63Z1Z1Z4Z2Z1Z1Z29Z4Z1Z1Z97Z2Z1Z1Z29Z85Z1Z1Z86Z5Z1Z4Z1Z2Z1Z20Z1Z79Z1Z10Z2Z2Z5Z1Z116Z2Z4Z79Z1Z10Z2Z18Z1Z2Z4Z1Z116Z2Z3Z21Z1Z79Z1Z2Z7Z1Z116Z2Z4Z79Z1Z2Z7Z1Z116Z7Z1Z1Z1Z15Z2Z1Z1Z15Z2Z1Z1Z7Z1Z2Z3Z1Z125Z9Z1Z7Z1Z2Z1Z1Z127Z2Z1Z1Z127Z2Z1Z1Z13978ZZ1Z3Z0Z2Z2Z1Z0Z1Z3Z1Z1Z5Z2Z1Z0Z1Z3Z1Z0Z1Z1Z3Z0Z2Z1Z1Z0Z1Z1Z1Z0Z1Z3Z1Z1Z4Z0Z8Z3Z1Z0Z1Z3Z1Z0Z1Z3Z1Z0Z1Z3Z1Z0Z9Z3Z1Z0Z24Z3Z1Z0Z8Z1Z1Z3Z2Z0Z1Z3Z3Z0Z1Z3Z2Z0Z29Z1Z1Z0Z1Z3Z1Z1Z2Z0Z1Z1Z1Z2Z1Z1Z1Z0Z1Z3Z1Z0Z2Z1Z2Z2Z1Z1Z3Z0Z1Z3Z1Z2Z1Z1Z1Z0Z1Z3Z1Z1Z1Z2Z1Z3Z1Z1Z2Z0Z1Z3Z1Z0Z1Z1Z2Z0Z2Z3Z1Z1Z1Z2Z1Z1Z1Z2Z1Z1Z1Z2Z1Z1Z1Z2Z1Z0Z1Z1Z1Z3Z1Z2Z1Z0Z1Z3Z1Z0Z1Z1Z2Z2Z1Z0Z2Z3Z1Z1Z1Z0Z1Z1Z1Z3Z1Z1Z1Z0Z1Z3Z1Z1Z1Z0Z3Z3Z1Z1Z1Z0Z4Z3Z1Z0Z2Z1Z1Z0Z5Z3Z1Z0Z3Z3Z1Z0Z1Z1Z1Z0Z1Z2Z1Z0Z4Z3Z2Z0Z28Z1Z2Z2Z1Z1Z1Z0Z2Z1Z2Z0Z1Z1Z1Z2Z1Z1Z1Z0Z2Z1Z6Z2Z1Z1Z3Z2Z1Z0Z1Z1Z1Z0Z3Z1Z1Z2Z1Z1Z1Z2Z1Z0Z2Z1Z1Z2Z1Z1Z7Z0Z3Z1Z1Z3Z1Z1Z1Z2Z3Z1Z2Z2Z1Z1Z1Z2Z1Z0Z1Z1Z1Z3Z1Z0Z2Z1Z1Z2Z1Z0Z1Z2Z1Z0Z2Z3Z1Z0Z2Z1Z1Z3Z1Z1Z1Z0Z1Z1Z1Z0Z1Z1Z2Z0Z2Z1Z1Z2Z1Z0Z1Z1Z1Z0Z2Z2Z1Z0Z1Z3Z1Z0Z7Z3Z1Z0Z28Z1Z1Z0Z2Z1Z4Z0Z1Z1Z5Z2Z1Z1Z1Z0Z2Z1Z1Z0Z3Z1Z1Z0Z1Z1Z2Z0Z1Z1Z3Z0Z3Z1Z2Z0Z2Z1Z2Z0Z3Z1Z2Z0Z1Z1Z8Z2Z1Z0Z1Z1Z2Z0Z1Z1Z2Z0Z1Z1Z3Z0Z3Z3Z1Z1Z3Z2Z1Z1Z2Z0Z3Z1Z1Z0Z1Z1Z1Z0Z5Z1Z1Z0Z1Z1Z1Z0Z3Z1Z1Z0Z2Z3Z5Z0Z1Z3Z4Z0Z33Z1Z2Z0Z3Z1Z3Z0Z1Z3Z1Z0Z2Z1Z2Z0Z2Z1Z1Z0Z1Z1Z1Z0Z2Z1Z1Z3Z2Z0Z2Z1Z1Z0Z4Z3Z1Z1Z3Z0Z1Z1Z2Z0Z3Z1Z2Z0Z1Z3Z1Z2Z4Z0Z8Z1Z1Z2Z1Z0Z1Z1Z2Z0Z2Z1Z1Z0Z2Z3Z3Z0Z6Z3Z2Z0Z7Z3Z1Z2Z1Z0Z1Z3Z1Z1Z2Z3Z4Z0Z25Z1Z3Z0Z10Z1Z2Z0Z2Z1Z1Z0Z8Z1Z1Z0Z3Z1Z2Z0Z7Z1Z2Z3Z1Z1Z1Z0Z1Z1Z1Z0Z2Z2Z1Z1Z3Z0Z1Z2Z1Z0Z1Z1Z6Z0Z3Z1Z1Z0Z2Z1Z1Z0Z9Z1Z1Z0Z3Z3Z2Z0Z1Z1Z2Z0Z1Z1Z1Z0Z1Z3Z2Z0Z5Z3Z2Z1Z1Z0Z1Z3Z4Z0Z25Z1Z1Z0Z2Z1Z1Z0Z10Z1Z1Z0Z24Z1Z1Z0Z1Z1Z2Z0Z1Z3Z1Z0Z2Z1Z2Z3Z1Z0Z4Z1Z1Z0Z13Z3Z1Z1Z1Z0Z1Z3Z2Z0Z2Z3Z1Z2Z1Z1Z1Z0Z3Z1Z1Z0Z6Z1Z2Z0Z3Z3Z1Z2Z1Z1Z1Z0Z1Z3Z6Z0Z26Z1Z1Z0Z12Z1Z1Z0Z25Z1Z3Z0Z2Z1Z1Z3Z1Z1Z1Z0Z2Z2Z1Z0Z17Z1Z1Z0Z2Z1Z1Z0Z2Z1Z2Z0Z1Z1Z1Z0Z1Z3Z2Z0Z5Z3Z2Z0Z3Z1Z1Z0Z1Z3Z2Z1Z2Z2Z1Z0Z1Z2Z1Z3Z1Z2Z1Z3Z1Z0Z39Z1Z1Z0Z26Z1Z2Z0Z3Z1Z2Z0Z1Z1Z1Z0Z18Z1Z1Z0Z6Z1Z2Z0Z2Z1Z1Z0Z3Z3Z1Z1Z2Z0Z1Z1Z2Z0Z1Z1Z1Z3Z3Z1Z1Z3Z2Z1Z1Z3Z5Z0Z28Z1Z1Z0Z3Z1Z1Z0Z3Z1Z1Z0Z3Z1Z1Z0Z3Z1Z1Z0Z3Z1Z1Z0Z3Z1Z1Z0Z3Z1Z1Z0Z3Z1Z1Z0Z3Z1Z1Z0Z28Z1Z1Z0Z14Z1Z1Z0Z6Z1Z4Z0Z1Z1Z2Z0Z4Z1Z1Z0Z29Z3Z1Z0Z64Z1Z1Z0Z32Z1Z1Z0Z29Z1Z1Z0Z86Z3Z2Z1Z1Z2Z1Z1Z1Z0Z1Z3Z1Z1Z5Z0Z116Z1Z6Z2Z1Z3Z1Z1Z4Z0Z116Z1Z3Z2Z1Z1Z8Z0Z116Z1Z12Z0Z116Z1Z1Z0Z1Z1Z2Z0Z1Z1Z2Z0Z1Z1Z4Z0Z125Z1Z3Z0Z127Z1Z1Z0Z127Z1Z1Z0Z127Z1Z1Z0Z127Z1Z1Z0Z13722ZZZ1Z0Z0Z0ZC1Z0ZC1Z0ZC1Z0ZC1Z0Z0Z0Z1Z0Z1Z0Z1Z0Z0Z1Z0Z0Z0Z2Z3Z3Z0Z1ZC1Z2Z1Z0ZC2Z1ZC2Z3ZC1Z0Z0Z0Z1Z3Z0Z0ZC1Z1ZC2Z1ZC3Z0ZC3Z0ZC3Z0ZC1Z0ZC1Z1ZC1Z1ZC1Z1ZC1Z1ZC1Z1Z0Z1Z1Z1Z1Z2Z1Z2Z0Z2ZC1Z2ZC1Z2Z2Z2Z2Z1Z2Z1Z0Z3Z0Z0ZC1Z1ZC1Z2Z0Z1Z1Z2Z2Z2Z3Z3Z2Z1Z5Z3Z1Z1Z6Z3Z3Z1Z0Z3Z0Z3Z1Z2Z3Z0Z0Z3Z1Z1ZC1Z2Z1Z2Z2Z3Z2Z3ZC1Z2Z1Z3Z2Z3Z8Z2Z15Z0Z14Z0Z14Z0Z14Z0Z15Z0Z15Z0Z0Z0Z1Z0Z0Z0Z0Z0ZC1Z0ZC1Z0ZC1Z0Z0Z0Z1Z0ZC1Z0Z1Z0ZC1Z0Z1Z0Z0Z0Z0Z0Z1Z0ZC1Z0Z1Z0Z0Z0ZC1Z0ZC1Z0Z1Z0Z1Z0Z1Z0Z1Z0Z0Z0ZC1Z0ZC1Z0ZC1Z0Z1Z0ZC1Z0Z0Z0ZC1Z0ZC1Z0Z0Z0Z0Z0Z1Z0Z0Z0Z1Z0Z0Z0ZC1Z0Z1Z0ZC1Z0Z1Z0Z0Z0Z0Z0ZC1Z0Z0Z0Z1Z0Z0Z0ZC1Z0ZZ0Z0";
-        }
-        const replayCode = "12346082TAS_programminguyǇǇ2Ǉ0Ǉ0Ǉ1Ǉ17Ǉ9Ǉ18Ǉ1Ǉ37Ǉ9Ǉ38Ǉ1Ǉ60Ǉ9Ǉ63Ǉ1Ǉ66Ǉ9Ǉ67Ǉ1Ǉ80Ǉ9Ǉ86Ǉ1Ǉ89Ǉ9Ǉ90Ǉ1Ǉ122Ǉ9Ǉ130Ǉ1Ǉ145Ǉ9Ǉ146Ǉ1Ǉ161Ǉ9Ǉ169Ǉ1Ǉ174Ǉ9Ǉ181Ǉ1Ǉ202Ǉ9Ǉ215Ǉ1Ǉ226Ǉ9Ǉ233Ǉ1Ǉ235Ǉ9Ǉ236Ǉ1Ǉ239Ǉ9Ǉ240Ǉ1Ǉ266Ǉ9Ǉ267Ǉ1Ǉ274Ǉ9Ǉ275Ǉ1Ǉ285Ǉ9Ǉ286Ǉ1Ǉ288Ǉ9Ǉ296Ǉ1Ǉ313Ǉ9Ǉ325Ǉ1Ǉ343Ǉ9Ǉ344Ǉ1Ǉ370Ǉ9Ǉ377Ǉ1Ǉ379Ǉ9Ǉ380Ǉ1Ǉ384Ǉ9Ǉ385Ǉ1Ǉ406Ǉ9Ǉ413Ǉ1Ǉ415Ǉ9Ǉ416Ǉ1Ǉ418Ǉ9Ǉ421Ǉ1Ǉ443Ǉ9Ǉ446Ǉ1Ǉ455Ǉ9Ǉ459Ǉ1Ǉ476Ǉ9Ǉ478Ǉ1Ǉ482Ǉ9Ǉ525Ǉ1Ǉ542Ǉ9Ǉ544Ǉ1Ǉ547Ǉ9Ǉ548Ǉ1Ǉ570Ǉ0";
-        const game = new Game('gameCanvas');
-        game.init(levelCode);
-    </script>
 </body>
 </html>
