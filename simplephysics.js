@@ -1,4 +1,4 @@
-class AppelPhysics {
+class AppelPhysicsSimple {
     constructor(mapData, mapRotations, MAP_DATA, LSX) {
         this.MAP = Array.isArray(mapData) ? mapData : Array.from(mapData);
         this.MAP_R = Array.isArray(mapRotations) ? mapRotations : Array.from(mapRotations);
@@ -46,14 +46,12 @@ class AppelPhysics {
         this.toverlap = 0;
         this.mask_char = 0;
         this.overlap = 0;
-        this.collide = false;
         this.RESOLVE = [0, 0, 1, 0, -1, -1, 0, 1, 0, -1, -1, 1, -1, -1, 1, 1, 1];
         this._temp_coords = [0, 0];
         this.key_index = this.MAP.indexOf(70);
     }
 
     get_block_at(x, y) {
-        if(y < 0) return 0;
         const sx = (x / 60) | 0;
         const sy = (y / 60) | 0;
         const idx = sx + sy * this.LSX;
@@ -69,56 +67,30 @@ class AppelPhysics {
             : (ry < 30 ? 0 : 3);
 
         const rot = (mid - this.MAP_R[idx]) & 3;
-        return mask[rot] ?? 0;
+        return mask[rot];
     }
     
-    isSolidAt(x, y, dir, playerState) {
+    is_solid_at(x, y, dir) {
         this.mask_char = this.get_block_at(x, y);
 
-        if (this.mask_char > 4) {
-            let temp;
-
-            if (dir === 1) {
-                temp = ((x % 30) + 30) % 30;
-            } else if (dir > 0) {
-                temp = 30 - ((y % 30) + 30) % 30;
-            } else if (dir === -1) {
-                temp = 30 - ((x % 30) + 30) % 30;
-            } else {
-                temp = ((y % 30) + 30) % 30;
-            }
-
-            if (temp > this.overlap) {
-                this.overlap = temp;
-            }
+        if (this.mask_char < 5) {
+            return;
         }
 
-        for (const object of playerState.OBJ) {
-            if (Math.abs(x - object.x) < object.width){
-                if (Math.abs(y - object.y) < object.height) {
-                    let temp;
-                    if (dir > 0) {
-                        if (dir === 1) {
-                            temp = x - (object.x - object.width);
-                        } else {
-                            temp = (object.y + object.height) - y;
-                            playerState.friction_dx = object.dx;
-                            playerState.friction_dy = object.dy;
-                        }
-                    } else {
-                        if (dir === -1) {
-                            temp = (object.x + object.width) - x;
-                        } else {
-                            temp = y - (object.y - object.height);
-                            playerState.friction_dx = object.dx;
-                            playerState.friction_dy = object.dy;
-                        }
-                    }
-                    if (temp > this.overlap) {
-                        this.overlap = temp;
-                    }
-                }
-            }
+        let temp;
+
+        if (dir === 1) {
+            temp = ((x % 30) + 30) % 30;
+        } else if (dir > 0) {
+            temp = 30 - ((y % 30) + 30) % 30;
+        } else if (dir === -1) {
+            temp = 30 - ((x % 30) + 30) % 30;
+        } else {
+            temp = ((y % 30) + 30) % 30;
+        }
+
+        if (temp > this.overlap) {
+            this.overlap = temp;
         }
     }
 
@@ -129,15 +101,15 @@ class AppelPhysics {
         }
 
         this.overlap = 0;
-        this.isSolidAt(playerState.PLAYER_X + dir * -30, playerState.PLAYER_Y + 8, dir, playerState);
-        this.isSolidAt(playerState.PLAYER_X + dir * -30, playerState.PLAYER_Y - 8, dir, playerState);
+        this.is_solid_at(playerState.PLAYER_X + dir * -30, playerState.PLAYER_Y + 8, dir);
+        this.is_solid_at(playerState.PLAYER_X + dir * -30, playerState.PLAYER_Y - 8, dir);
 
         if (this.overlap === 0) {
-            this.isSolidAt(playerState.PLAYER_X + dir * 4, playerState.PLAYER_Y + 4, dir, playerState);
+            this.is_solid_at(playerState.PLAYER_X + dir * 4, playerState.PLAYER_Y + 4, dir);
             if (this.overlap > 0) {
 
                 this.overlap = 0;
-                this.isSolidAt(playerState.PLAYER_X + dir * 4, playerState.PLAYER_Y - 4, dir, playerState);
+                this.is_solid_at(playerState.PLAYER_X + dir * 4, playerState.PLAYER_Y - 4, dir);
 
                 if (this.overlap > 0 && Math.abs(playerState.PLAYER_SX) > 3) {
 
@@ -152,7 +124,7 @@ class AppelPhysics {
         }
     }
 
-    full_overlap(x, y, dir, dxy2, playerState) {
+    full_overlap(x, y, dir, dxy2) {
         let tx = x;
         let ty = y;
         this.toverlap = 0;
@@ -160,11 +132,11 @@ class AppelPhysics {
         for (let i = 0; i < 4; i++) {
             this.overlap = 0;
 
-            this.isSolidAt(tx, ty, dir, playerState);
+            this.is_solid_at(tx, ty, dir);
             if (dir & 1) {
-                this.isSolidAt(tx, ty + dxy2, dir, playerState);
+                this.is_solid_at(tx, ty + dxy2, dir);
             } else {
-                this.isSolidAt(tx + dxy2, ty, dir, playerState);
+                this.is_solid_at(tx + dxy2, ty, dir);
             }
 
             if (this.overlap === 0) {
@@ -196,28 +168,28 @@ class AppelPhysics {
         let safe = null;
         let safed = 64;
 
-        this.full_overlap(playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y + playerState.PSZ[1], 0, playerState.PSZ[4] + playerState.PSZ[2], playerState);
+        this.full_overlap(playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y + playerState.PSZ[1], 0, playerState.PSZ[4] + playerState.PSZ[2]);
 
         if (this.toverlap > 0 && this.toverlap < safed) {
             safe = 0;
             safed = this.toverlap;
         }        
 
-        this.full_overlap(playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y - playerState.PSZ[3], 2, playerState.PSZ[4] + playerState.PSZ[2], playerState);
+        this.full_overlap(playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y - playerState.PSZ[3], 2, playerState.PSZ[4] + playerState.PSZ[2]);
 
         if (this.toverlap > 0 && this.toverlap < safed) {
             safe = 2;
             safed = this.toverlap;
         }
 
-        this.full_overlap(playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y - playerState.PSZ[3], -1, playerState.PSZ[1] + playerState.PSZ[3], playerState);
+        this.full_overlap(playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y - playerState.PSZ[3], -1, playerState.PSZ[1] + playerState.PSZ[3]);
 
         if (this.toverlap > 0 && this.toverlap < safed) {
             safe = -1;
             safed = this.toverlap;
         } 
 
-        this.full_overlap(playerState.PLAYER_X + playerState.PSZ[2], playerState.PLAYER_Y - playerState.PSZ[3], 1, playerState.PSZ[1] + playerState.PSZ[3], playerState);
+        this.full_overlap(playerState.PLAYER_X + playerState.PSZ[2], playerState.PLAYER_Y - playerState.PSZ[3], 1, playerState.PSZ[1] + playerState.PSZ[3]);
 
         if (this.toverlap > 0 && this.toverlap < safed) {
             safe = 1;
@@ -267,10 +239,10 @@ class AppelPhysics {
         }
 
         this.overlap = 0;
-        this.isSolidAt(left_x, bottom_y, 0, playerState);
+        this.is_solid_at(left_x, bottom_y, 0);
         if (this.overlap !== 0) return;
 
-        this.isSolidAt(right_x, bottom_y, 0, playerState);
+        this.is_solid_at(right_x, bottom_y, 0);
         if (this.overlap !== 0) return;
 
         if (this.get_block_at(left_x, y) >= 5 || 
@@ -328,10 +300,10 @@ class AppelPhysics {
         }
 
         this.overlap = 0;
-        this.isSolidAt(playerState.PLAYER_X, playerState.PLAYER_Y + playerState.PSZ[1], dir, playerState);
+        this.is_solid_at(playerState.PLAYER_X, playerState.PLAYER_Y + playerState.PSZ[1], dir);
         this.active_block(dir, playerState.PLAYER_X, playerState.PLAYER_Y + playerState.PSZ[1], playerState);
-        this.isSolidAt(playerState.PLAYER_X, playerState.PLAYER_Y, dir, playerState);
-        this.isSolidAt(playerState.PLAYER_X, playerState.PLAYER_Y - playerState.PSZ[3], dir, playerState);
+        this.is_solid_at(playerState.PLAYER_X, playerState.PLAYER_Y, dir);
+        this.is_solid_at(playerState.PLAYER_X, playerState.PLAYER_Y - playerState.PSZ[3], dir);
         this.active_block(dir, playerState.PLAYER_X, playerState.PLAYER_Y - playerState.PSZ[3], playerState);
 
         if (this.overlap > 0) {
@@ -357,9 +329,9 @@ class AppelPhysics {
             }
 
             this.overlap = 0;
-            this.isSolidAt(playerState.PLAYER_X, playerState.PLAYER_Y + playerState.PSZ[1], dir, playerState);
-            this.isSolidAt(playerState.PLAYER_X, playerState.PLAYER_Y, dir, playerState);
-            this.isSolidAt(playerState.PLAYER_X, playerState.PLAYER_Y - playerState.PSZ[3], dir, playerState);
+            this.is_solid_at(playerState.PLAYER_X, playerState.PLAYER_Y + playerState.PSZ[1], dir);
+            this.is_solid_at(playerState.PLAYER_X, playerState.PLAYER_Y, dir);
+            this.is_solid_at(playerState.PLAYER_X, playerState.PLAYER_Y - playerState.PSZ[3], dir);
 
             if (this.overlap > 0) {
                 playerState.PLAYER_DEATH = true;
@@ -408,9 +380,9 @@ class AppelPhysics {
         playerState.friction = 0;
         playerState.friction_dx = 0;
         playerState.friction_dy = 0;
-        this.isSolidAt(playerState.PLAYER_X + playerState.PSZ[2], playerState.PLAYER_Y, dir, playerState);
+        this.is_solid_at(playerState.PLAYER_X + playerState.PSZ[2], playerState.PLAYER_Y, dir);
         this.active_block(dir, playerState.PLAYER_X + playerState.PSZ[2], playerState.PLAYER_Y, playerState);
-        this.isSolidAt(playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y, dir, playerState);
+        this.is_solid_at(playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y, dir);
         this.active_block(dir, playerState.PLAYER_X - playerState.PSZ[4], playerState.PLAYER_Y, playerState);
 
         if (this.overlap > 0) {
@@ -467,26 +439,26 @@ class AppelPhysics {
         if (playerState.flipped === 0) {
             if (playerState.player_wall === 0) {
                 let checkY = (py - playerState.PSZ[3]) - 8;
-                this.isSolidAt(px - playerState.PSZ[4], checkY, 0, playerState);
-                this.isSolidAt(px + playerState.PSZ[2], checkY, 0, playerState);
+                this.is_solid_at(px - playerState.PSZ[4], checkY, 0);
+                this.is_solid_at(px + playerState.PSZ[2], checkY, 0);
             } else {
                 let checkY = py + playerState.PSZ[1] + 8;
-                this.isSolidAt(px - playerState.PSZ[4], checkY, 0, playerState);
-                this.isSolidAt(px + playerState.PSZ[2], checkY, 0, playerState);
+                this.is_solid_at(px - playerState.PSZ[4], checkY, 0);
+                this.is_solid_at(px + playerState.PSZ[2], checkY, 0);
             }
         } else if (playerState.flipped === 1) {
             let checkX = px - playerState.PSZ[4] - 8;
-            this.isSolidAt(checkX, py + playerState.PSZ[1], 1, playerState);
-            this.isSolidAt(checkX, py - playerState.PSZ[3], 1, playerState);
+            this.is_solid_at(checkX, py + playerState.PSZ[1], 1);
+            this.is_solid_at(checkX, py - playerState.PSZ[3], 1);
         } else if (playerState.flipped === 3) {
             let checkX = px + playerState.PSZ[2] + 8;
-            this.isSolidAt(checkX, py + playerState.PSZ[1], -1, playerState);
-            this.isSolidAt(checkX, py - playerState.PSZ[3], -1, playerState);
+            this.is_solid_at(checkX, py + playerState.PSZ[1], -1);
+            this.is_solid_at(checkX, py - playerState.PSZ[3], -1);
         }
     }
 
 
-    positionNow(playerState) {
+    position_now(playerState) {
         if (playerState.player_state === 3) {
             playerState.direction += 22.5 * playerState.flipped;
             playerState.direction = ((playerState.direction % 360) + 360) % 360;
@@ -523,15 +495,15 @@ class AppelPhysics {
         this.overlap = 0;
 
         if (wall === 0) {
-            this.isSolidAt(px, py + playerState.PSZ[1] + 1, 0, playerState);
+            this.is_solid_at(px, py + playerState.PSZ[1] + 1, 0);
         } else if (wall === 1) {
             const checkX = px + playerState.PSZ[2] + 1;
-            this.isSolidAt(checkX, py, 0, playerState);
+            this.is_solid_at(checkX, py, 0);
             this.active_block(wall, checkX, py, playerState);
-            this.isSolidAt(checkX, py - playerState.PSZ[3], 0, playerState);
+            this.is_solid_at(checkX, py - playerState.PSZ[3], 0);
             this.active_block(wall, checkX, py - playerState.PSZ[3], playerState);
         } else if (wall === -1) {
-            this.isSolidAt(px - playerState.PSZ[4] - 1, py, 0, playerState);
+            this.is_solid_at(px - playerState.PSZ[4] - 1, py, 0);
             this.active_block(wall, px - playerState.PSZ[4] - 1, py, playerState);
         }
 
@@ -649,8 +621,8 @@ class AppelPhysics {
                         const py = playerState.PLAYER_Y;
                         const check_y = py + 15;
 
-                        this.isSolidAt(px - playerState.PSZ[4], check_y, -99, playerState);
-                        this.isSolidAt(px + playerState.PSZ[2], check_y, -99, playerState);
+                        this.is_solid_at(px - playerState.PSZ[4], check_y, -99);
+                        this.is_solid_at(px + playerState.PSZ[2], check_y, -99);
 
                         if (this.overlap === 0 && playerState.PLAYER_SY < 16) {
                             playerState.KEY_UP = 2;
@@ -727,7 +699,7 @@ class AppelPhysics {
     }
 
     check_dangers(playerState) {
-        if (!this.touching){console.error("spikes not loaded")}
+        if (!this.touching){return}
 
         const isInSpikeTile = 
         this.get_block_at(playerState.PLAYER_X + playerState.PSZ[2] - 1, playerState.PLAYER_Y) === 2 
@@ -736,11 +708,13 @@ class AppelPhysics {
         || this.get_block_at(playerState.PLAYER_X, playerState.PLAYER_Y - (playerState.PSZ[3] - 1)) === 2;
 
         if (playerState.wasInSpikeTileLastFrame) {
+            playerState.wasInSpikeTileLastFrame = isInSpikeTile;
             if (this.touching.is_player_touching_spike(playerState, this)) {
                 playerState.PLAYER_DEATH = true;
             }
+        } else {
+            playerState.wasInSpikeTileLastFrame = isInSpikeTile;
         }
-        playerState.wasInSpikeTileLastFrame = isInSpikeTile;
     }
 
     active_block(dir, tileX, tileY, playerState) {
@@ -778,7 +752,7 @@ class AppelPhysics {
         }
     }
 
-    tickActive(playerState) {
+    tick_active(playerState) {
         for (const activeTile of playerState.activeIdxSpawn) {
             const tile = this.MAP[activeTile];
             if (tile === 42){
@@ -794,7 +768,7 @@ class AppelPhysics {
                 playerState.activeTyp.push("crumble2");
                 playerState.activeFrame.push(0.5);
             } else if (tile === 72){
-                this.touchingDoor(playerState, activeTile);
+                this.touching_door(playerState, activeTile);
             }
         }
         playerState.activeIdxSpawn.length = 0;
@@ -802,27 +776,35 @@ class AppelPhysics {
             if (playerState.activeTyp[i] === "spring") {
                 this.tick_spring(playerState, playerState.activeIdx[i], playerState.activeFrame[i], this.MAP_R[playerState.activeIdx[i]], i);
             } else if (playerState.activeTyp[i] === "crumble") {
-                this.tickCrumble(playerState, playerState.activeIdx[i], i, 8, 34, 0.5);
+                this.tick_crumble(playerState, playerState.activeIdx[i], i, 8, 34, 0.5);
             }   else if (playerState.activeTyp[i] === "crumble2") {
-                this.tickCrumble(playerState, playerState.activeIdx[i], i, 4, 46, 0.25);
+                this.tick_crumble(playerState, playerState.activeIdx[i], i, 4, 46, 0.25);
             }
         }
     }
 
-    touchingDoor(playerState, idx) {
+    _setMap(idx, value, playerState) {
+        this.MAP[idx] = value;
+        if (playerState && playerState.mapChanges !== undefined) {
+            playerState.mapChanges[idx] = value;
+            playerState.mapChangesEmpty = false;
+        }
+    }
+
+    touching_door(playerState, idx) {
         if (!playerState.has_key) return;
-        this.MAP[idx] = 1;
+        this._setMap(idx, 1, playerState);
         playerState.PLAYER_SX = 0;
     }
 
-    tickCrumble(playerState, idx, a, max, costume, inc){
+    tick_crumble(playerState, idx, a, max, costume, inc){
         playerState.activeFrame[a] += inc;
         if (playerState.activeFrame[a] <= max) {
             if (playerState.activeFrame[a] % 1 < inc) {
                 if (playerState.activeFrame[a] < max) {
-                    this.MAP[idx] = costume + playerState.activeFrame[a];
+                    this._setMap(idx, costume + playerState.activeFrame[a], playerState);
                 } else {
-                    this.MAP[idx] = 1;
+                    this._setMap(idx, 1, playerState);
                 }
             }
         } else {
@@ -837,14 +819,14 @@ class AppelPhysics {
                     }
                 }
                 if (playerState.activeFrame[a] > 80 + max) {
-                    this.MAP[idx] = costume;
+                    this._setMap(idx, costume, playerState);
                     playerState.activeIdx.splice(a, 1);
                     playerState.activeTyp.splice(a, 1);
                     playerState.activeFrame.splice(a, 1);
                     return;
                 } else {
                     if (playerState.activeFrame[a] % 1 === 0) {
-                    this.MAP[idx] = (costume + max) + (80 - playerState.activeFrame[a]);
+                    this._setMap(idx, (costume + max) + (80 - playerState.activeFrame[a]), playerState);
                     }
                 }
             }
@@ -872,20 +854,20 @@ class AppelPhysics {
                 }
                 playerState.PLAYER_NO_SLOW = 15;
             }
-            this.MAP[idx] = 43;
+            this._setMap(idx, 43, playerState);
 
-            let [ux, uy] = this.getUXY((((dir % 4) + 4) % 4) - 1, 30);
+            let [ux, uy] = this.get_UXY((((dir % 4) + 4) % 4) - 1, 30);
             if (ux === 0) {
                 playerState.PLAYER_SY = uy;
             } else {
                 playerState.PLAYER_SX = ux;
             }
-            const commandsIdx = this.MAP_DATA.indexOf("+" + String(idx + 1));
+            const commands_idx = this.MAP_DATA.indexOf("+" + String(idx + 1));
 
-            if (commandsIdx != -1) {
-                const cmds = this.parseCommands(this.MAP_DATA[commandsIdx + 1]);
+            if (commands_idx != -1) {
+                const cmds = this.parse_commands(this.MAP_DATA[commands_idx + 1]);
 
-                const dx = cmds.map(c => String(c).toLowerCase()).indexOf("x");
+                const dx = cmds.map(c => c.toLowerCase()).indexOf("x");
                 if (dx != -1) {
                     playerState.PLAYER_SX = parseFloat(cmds[dx + 1]);
                     playerState.PLAYER_NO_SLOW = 15;
@@ -893,7 +875,7 @@ class AppelPhysics {
                     uy = 0;
                 }
 
-                const dy = cmds.map(c => String(c).toLowerCase()).indexOf("y");
+                const dy = cmds.map(c => c.toLowerCase()).indexOf("y");
                 if (dy != -1) {
                     playerState.PLAYER_SY = parseFloat(cmds[dy + 1]);
                 }
@@ -905,14 +887,14 @@ class AppelPhysics {
         }
         playerState.activeFrame[a] += 1;
         if (frame === 26) {
-            this.MAP[idx] = 42;
+            this._setMap(idx, 42, playerState);
             playerState.activeIdx.splice(a, 1);
             playerState.activeTyp.splice(a, 1);
             playerState.activeFrame.splice(a, 1);
         }
     }
 
-    getUXY(dir, mul) {
+    get_UXY(dir, mul) {
         switch (dir) {
             case 1:  return [mul, 0];
             case -1: return [-mul, 0];
@@ -920,115 +902,8 @@ class AppelPhysics {
             case 0: return [0, mul];
         }
     }
-
-    tickObj(playerState) {
-        for (let object of playerState.OBJ) {
-            object.x = object.nx;
-            object.y = object.ny;
-
-            object.frame -= 1;
-            if (object.frame > 0) continue;
-
-            this.overlap = null;
-            this.collide = false;
-            if (object.dir < 2) {
-                if (object.dir === 0) {
-                    this.accelerateDy(object, 1);
-                } else {
-                    this.accelerateDx(object, 1);
-                }
-            } else {
-                if (object.dir === 2) {
-                    this.accelerateDy(object, -1);
-                } else {
-                    this.accelerateDx(object, -1);
-                }
-            }
-            object.nx += Math.round(object.dx);
-            object.ny += Math.round(object.dy);
-
-            if (this.overlap != null) {
-                if (this.collide) {
-                    object.dx = 0;
-                    object.dy = 0;
-                    object.frame = 5;
-
-                    object.nx = Math.round(object.nx / 15) * 15
-                    object.ny = Math.round(object.ny / 15) * 15
-                } else {
-                    object.dir = (object.dir + 2) % 4
-                }
-            }
-        }
-    }
-
-    accelerateDx(object, mul) {
-        if ((object.dx * mul) < object.speed) {
-            object.dx += object.acc * mul;
-            if (object.dx * mul > object.speed) {
-                object.dx = object.speed * mul;
-            }
-            object.reach = mul * (((object.dx * object.dx) / (2 * object.acc)) + object.width)
-        }
-        if (mul * object.dx < 0) {
-            this.overlap = null;
-            this.isSolidAtOBJ((object.x - (mul * object.width)) + object.dx, object.y, -mul, 0, true);
-            if (this.overlap != null) {
-                object.dx += mul * this.overlap;
-            }
-            this.collide = true;
-        } else {
-            this.isSolidAtOBJ(object.x + object.reach, object.y, 0, 0, true);
-        }
-    }
-
-    accelerateDy(object, mul) {
-        if ((object.dy * mul) < object.speed) {
-            object.dy += object.acc * mul;
-            if (object.dy * mul > object.speed) {
-                object.dy = object.speed * mul;
-            }
-            object.reach = mul * (((object.dy * object.dy) / (2 * object.acc)) + object.height)
-        }
-        if (mul * object.dy < 0) {
-            this.overlap = null;
-            this.isSolidAtOBJ(object.x, (object.y - (mul * object.height)) + object.dy, mul + 1, 0, true);
-            if (this.overlap != null) {
-                object.dy += mul * this.overlap;
-            }
-            this.collide = true;
-        } else {
-            this.isSolidAtOBJ(object.x, object.y + object.reach, 0, 0, true);
-        }
-    }
-
-    isSolidAtOBJ(x, y, dir, schk, spikeIsSolid) {
-        let c = this.get_block_at(x, y, dir)
-
-        if (spikeIsSolid && c === 2) {c = 9;} else { if (!spikeIsSolid && c === 2) c = 0;};
-
-        if (c > schk) {
-            let temp;
-            if (dir > 0) {
-                if (dir === 1) {
-                    temp = ((x % 30) + 30) % 30;
-                } else {
-                    temp = 30 - ((y % 30) + 30) % 30;
-                }
-            } else {
-                if (dir === -1) {
-                    temp = 30 - ((x % 30) + 30) % 30;
-                } else {
-                    temp = ((y % 30) + 30) % 30;
-                }
-            }
-            if (temp >= 0) {
-                this.overlap = temp;
-            }
-        }
-    }
-
-    parseCommands(txt) {
+    
+    parse_commands(txt) {
         let cmds = [];
         let dy = "";
         const DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "." , "-"]
@@ -1050,7 +925,7 @@ class AppelPhysics {
         return cmds;
     }
 
-    isFlagAt(x, y) {
+    is_flag_at(x, y) {
         const ix = Math.floor(x);
         const iy = Math.floor(y);
 
@@ -1061,13 +936,13 @@ class AppelPhysics {
         return this.MAP[idx] === 63;
     }
 
-    handleKey(playerState) {
+    handle_key(playerState) {
         if (this.key_index > 0) {
             const y = Math.floor(this.key_index / this.LSX) * 60 + 30;
             const x = (this.key_index % this.LSX) * 60 + 30;
             if (Math.abs(x - playerState.PLAYER_X) < 26 && Math.abs(y - playerState.PLAYER_Y) < 26) {
                 playerState.has_key = true;
-                this.MAP[this.key_index] = 1;
+                this._setMap(this.key_index, 1, playerState);
             }
         }
     }
@@ -1102,9 +977,7 @@ class AppelPhysics {
             playerState.KEY_RIGHT = 0;
         }
 
-        this.tickActive(playerState);
-
-        this.tickObj(playerState);
+        this.tick_active(playerState)
 
         this.resolve_collisions(false, playerState);
 
@@ -1130,14 +1003,14 @@ class AppelPhysics {
             }
         }
 
-        this.positionNow(playerState);
+        this.position_now(playerState);
 
-        this.handleKey(playerState);
+        this.handle_key(playerState);
 
         return playerState;
     }
 
-    createDefaultGameState(obj, x = 128.0, y = 280.0) {
+    createDefaultPlayerState(x = 128.0, y = 280.0) {
         const spawnIDX = this.MAP.indexOf(76);
         let newX, newY
         if (spawnIDX > 0) {
@@ -1178,49 +1051,13 @@ class AppelPhysics {
             activeIdx: [],
             activeTyp: [],
             activeFrame: [],
-            has_key: false,
-            OBJ: obj
+            has_key: false
         }
 
     }
 
-    spawnOBJ(levelData){
-        let OBJ = [];
-        for (let idx = 0; idx <= levelData.map.length; idx++) {
-            if (levelData.map[idx] === 23 || levelData.map[idx] === 24) {
-                
-                const x = (idx % levelData.size_x) * 60 + 30 - 15 * (levelData.rotations[idx] % 2 === 0) + 30 * (levelData.rotations[idx] === 2);
-                const y = Math.floor(idx / levelData.size_x) * 60 + 30 - 15 * (levelData.rotations[idx] % 2 === 1) + 30 * (levelData.rotations[idx] === 1);
-
-                let dir = levelData.rotations[idx] % 2 === 1 ? -1 : 0;
-                if (levelData.map[idx] === 24) {
-                    dir = (dir + 2) % 4 - 1
-                }
-
-                OBJ.push(
-                    {
-                        typ: "lift",
-                        x: x,
-                        y: y,
-                        height: levelData.rotations[idx] % 2 === 1 ? 15 : 30,
-                        width: levelData.rotations[idx] % 2 === 1 ? 30 : 15,
-                        acc: 0.15,
-                        frame: 0,
-                        dir: dir,
-                        direction: levelData.rotations[idx] * 90,
-                        speed: 4,
-                        reach: 0,
-                        dx: 0,
-                        dy: 0,
-                        nx: x,
-                        ny: y
-                    }
-                )
-            }
-        }
-        return OBJ;
-    }
 }
+
 
 const _KEY_LOOKUP = {'D': 1, 'A': 2, 'S': 4, 'W': 8};
 
@@ -1239,18 +1076,10 @@ function keyCode(keys) {
 function decodeReplayCode(replayCode) {
     try {        
         const data = replayCode.slice(8).split('Ǉ').slice(4);
+        const inputCount = parseInt(data[data.length - 2]) - 1;
+        if (isNaN(inputCount) || inputCount < 0) {console.error("Error decoding replay");};
 
-        let maxIndex = 0;
-        for (let i = 0; i < data.length; i += 2) {
-            const val = parseInt(data[i]);
-            if (!isNaN(val)) maxIndex = Math.max(maxIndex, val);
-        }
-        if (data.length % 2 !== 0) {
-            const finalVal = parseInt(data[data.length - 1]);
-            if (!isNaN(finalVal)) maxIndex = Math.max(maxIndex, finalVal);
-        }
-
-        const inputs = new Array(maxIndex).fill("");
+        const inputs = new Array(inputCount).fill("");
         
         const keyCombos = {};
         const keyMap = [
@@ -1265,23 +1094,21 @@ function decodeReplayCode(replayCode) {
             keyCombos[i] = keys;
         }
         
-        for (let i = 0; i < data.length - 1; i += 2) {
+        for (let i = 0; i < data.length; i += 2) {
             const start = parseInt(data[i]) - 1;
             const keyValue = parseInt(data[i + 1]);
-
-            if (isNaN(start) || isNaN(keyValue)) continue;
-
             const keys = keyCombos[keyValue] || "";
-
-            let nextStart = NaN;
-            if (i + 3 < data.length) { 
+            
+            if (i < data.length) {
                 nextStart = parseInt(data[i + 2]) - 1;
             }
-
-            const end = isNaN(nextStart)
-                ? inputs.length
-                : Math.min(nextStart, inputs.length);
-
+            
+            let end
+            if (isNaN(nextStart)) {
+                end = start + 100;
+            } else {
+                end = Math.min(nextStart, inputCount);
+            }
             for (let j = start; j < end; j++) {
                 inputs[j] = keys;
             }
