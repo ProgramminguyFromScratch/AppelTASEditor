@@ -478,7 +478,7 @@ class AppelPhysics {
             let checkX = px - playerState.PSZ[4] - 8;
             this.isSolidAt(checkX, py + playerState.PSZ[1], 1, playerState);
             this.isSolidAt(checkX, py - playerState.PSZ[3], 1, playerState);
-        } else if (playerState.flipped === 3) {
+        } else if (playerState.flipped === -1) {
             let checkX = px + playerState.PSZ[2] + 8;
             this.isSolidAt(checkX, py + playerState.PSZ[1], -1, playerState);
             this.isSolidAt(checkX, py - playerState.PSZ[3], -1, playerState);
