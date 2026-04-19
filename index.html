@@ -1,449 +1,3 @@
-<!-- <!DOCTYPE html>
-<meta charset="UTF-8">
-<html>
-<head>
-    <title>Appel TAS Editor</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #000;
-            color: #fff;
-            font-family: monospace;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .container {
-            display: flex;
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
-        }
-
-        .left-panel {
-            width: 50%;
-            display: flex;
-            flex-direction: column;
-            border-right: 2px solid #ffff00;
-            overflow: hidden;
-        }
-
-        .bottom-section {
-            display: flex;
-            flex: 1;
-            gap: 15px;
-            padding: 10px;
-            border-top: 2px solid #00ff55;
-            background: #0a0a0a;
-            overflow: hidden;
-        }
-
-        #playerState {
-            padding: 15px;
-            background: #0a0a0a;
-            flex: 1;
-            overflow-y: auto;
-            font-size: 13px;
-            line-height: 1.6;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            align-content: start;
-        }
-
-        .info-panels {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            flex: 0 0 auto;
-        }
-
-        .controls,
-        .status-display {
-            position: static;
-            background: rgba(20, 20, 20, 0.9);
-            border: 2px solid #ffff00;
-            padding: 12px;
-            font-size: 12px;
-            line-height: 1.6;
-            z-index: 1000;
-        }
-
-        .status-display {
-            border: 2px solid #00ff55;
-        }
-
-        .state-section {
-            margin-bottom: 15px;
-            padding: 8px;
-            background: #111;
-            border-left: 3px solid #00ff55;
-        }
-
-        .state-key   { color: #ffff00; }
-        .state-value { color: #00ff55; }
-
-        .right-panel {
-            width: 50%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .right-panel > div {
-            padding: 10px;
-            border-bottom: 2px solid #ffff00;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .section-title {
-            color: #ffff00;
-            font-size: 12px;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        #levelCodeInput  { flex: 0 0 auto; }
-        #inputEditorSection { flex: 1 1 auto; }
-        #replayCodeSection  { flex: 0 0 auto; }
-
-        input[type="text"],
-        textarea {
-            background: #111;
-            color: #00ff55;
-            border: 1px solid #ffff00;
-            padding: 8px;
-            font-family: monospace;
-            font-size: 15px;
-            resize: none;
-        }
-
-        input[type="text"]:focus,
-        textarea:focus {
-            outline: none;
-            border: 1px solid #00ff55;
-            box-shadow: 0 0 5px rgba(0, 255, 85, 0.3);
-        }
-
-        input[type="text"] {
-            flex: 0 0 auto;
-            height: 24px;
-        }
-
-        #inputEditorWrapper {
-            flex: 1 1 auto;
-            margin-top: 5px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #inputEditor {
-            flex: 1 1 auto;
-            color: transparent;
-            caret-color: #00ff55;
-            position: relative;
-            z-index: 1;
-            background: #111;
-            border: 1px solid transparent;
-        }
-        #inputEditor::placeholder {
-            color: #00ff55;
-            opacity: 1;
-        }
-
-        #inputHighlightOverlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 2;
-            font-family: monospace;
-            font-size: 15px;
-            line-height: inherit;
-            padding: 8px;
-            margin: 0;
-            color: #00ff55;
-            background: transparent;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            overflow: hidden;
-            border: 1px solid transparent;
-            box-sizing: border-box;
-        }
-
-        .current-token {
-            background: rgba(255, 255, 0, 0.28);
-            color: #ffff00;
-            border-radius: 3px;
-            outline: 1px solid rgba(255, 255, 0, 0.6);
-        }
-
-        .paren-syntax { color: #ff9900; }
-
-        #replayCode {
-            flex: 0 0 auto;
-            height: 80px;
-            margin-top: 5px;
-            background: #0a0a0a;
-            color: #ffff00;
-        }
-
-        #gameCanvas {
-            display: block;
-            background: #000;
-            border-bottom: 2px solid #ffff00;
-        }
-
-        .control-item {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 6px;
-        }
-
-        .control-key  { color: #ffff00; min-width: 50px; font-weight: bold; }
-        .control-desc { color: #00ff55; text-align: right; }
-
-        .status-item {
-            color: #00ff55;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .status-item strong { color: #ffff00; }
-
-        .fps-input {
-            width: 50px;
-            background: #111;
-            color: #00ff55;
-            border: 1px solid #ffff00;
-            font-family: monospace;
-            padding: 2px 5px;
-            font-size: 12px;
-            text-align: right;
-        }
-
-        .fps-input:focus {
-            outline: none;
-            border-color: #00ff55;
-        }
-
-        .action-btn {
-            background: #111;
-            color: #00ff55;
-            border: 1px solid #ffff00;
-            padding: 6px 12px;
-            font-family: monospace;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 8px;
-            width: 100%;
-            transition: all 0.2s;
-            text-transform: uppercase;
-        }
-
-        .action-btn:hover {
-            background: #222;
-            border-color: #00ff55;
-            box-shadow: 0 0 5px rgba(0, 255, 85, 0.3);
-        }
-
-        #timeline-section {
-            flex-shrink: 0;
-            height: 82px;
-            border-top: 2px solid #ffff00;
-            background: #0a0a0a;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #timeline-header {
-            flex-shrink: 0;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 10px;
-            border-bottom: 1px solid #1e1e1e;
-            gap: 12px;
-        }
-
-        #timeline-header .section-title {
-            margin: 0;
-            line-height: 1;
-        }
-
-        #timeline-time {
-            color: #00ff55;
-            font-size: 11px;
-            font-family: monospace;
-            flex: 1;
-            text-align: center;
-            letter-spacing: 0.5px;
-        }
-
-        #timeline-zoom-wrap {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-        }
-
-        #timeline-zoom-wrap label {
-            color: #ffff00;
-            white-space: nowrap;
-        }
-
-        #timelineZoom {
-            width: 72px;
-            accent-color: #ffff00;
-            cursor: pointer;
-            vertical-align: middle;
-        }
-
-        #timeline-track {
-            flex: 1;
-            overflow-x: auto;
-            overflow-y: hidden;
-            position: relative;
-            cursor: crosshair;
-        }
-
-        #timeline-track::-webkit-scrollbar { height: 4px; }
-        #timeline-track::-webkit-scrollbar-track { background: #111; }
-        #timeline-track::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-
-        #timelineCanvas {
-            display: block;
-            height: 100%;
-            image-rendering: pixelated;
-        }
-
-        #timeline-playhead {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            width: 2px;
-            background: #ffff00;
-            pointer-events: none;
-            box-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
-            will-change: transform;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-
-        <div class="left-panel">
-            <canvas id="gameCanvas"></canvas>
-            <div class="bottom-section">
-                <div id="playerState"></div>
-                <div class="info-panels">
-                    <div class="controls">
-                        <div class="control-item">
-                            <span class="control-key">Q</span>
-                            <span class="control-desc">Restart TAS</span>
-                        </div>
-                        <div class="control-item">
-                            <span class="control-key">V</span>
-                            <span class="control-desc">Pause / Frame Step</span>
-                        </div>
-                        <div class="control-item">
-                            <span class="control-key">B</span>
-                            <span class="control-desc">Resume / Unpause</span>
-                        </div>
-                        <div class="control-item">
-                            <span class="control-key">C</span>
-                            <span class="control-desc">Step Back 1 Frame</span>
-                        </div>
-                        <div class="control-item">
-                            <span class="control-key">1-3</span>
-                            <span class="control-desc">Save State</span>
-                        </div>
-                        <div class="control-item">
-                            <span class="control-key">4-6</span>
-                            <span class="control-desc">Load State</span>
-                        </div>
-                    </div>
-                    <div class="status-display">
-                        <div class="status-item"><strong>Frame:</strong> <span id="frameCounter">0</span></div>
-                        <div class="status-item"><strong>Input:</strong> <span id="inputProgress">0/0</span></div>
-                        <div class="status-item">
-                            <strong>FPS:</strong>
-                            <input type="number" id="fpsInput" class="fps-input" value="30" min="1">
-                        </div>
-                        <div class="status-item"><strong>Status:</strong> <span id="statusDisplay">Loading</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="right-panel">
-            <div id="levelCodeInput">
-                <div class="section-title">Level Code</div>
-                <input type="text" id="levelCode" placeholder="Paste level code here...">
-            </div>
-            <div id="inputEditorSection">
-                <div class="section-title">Frame Inputs</div>
-                <div id="inputEditorWrapper">
-                    <textarea id="inputEditor"
-                        placeholder="D1 WD5 // press D (or right) for one frame, then press WD for 5&#10;sda8 d7 //comments&#10;_6 // underscore for no keys&#10;6 // also works for no keys&#10;break // pauses the game for you&#10;(D1 SD1)50 // repeat 50 times"></textarea>
-                    <pre id="inputHighlightOverlay" aria-hidden="true"></pre>
-                </div>
-            </div>
-            <div id="replayCodeSection">
-                <div class="section-title">Replay Code</div>
-                <textarea id="replayCode" readonly></textarea>
-                <button id="importReplayBtn" class="action-btn">Import Replay Code</button>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="timeline-section">
-
-        <div id="timeline-header">
-            <span class="section-title">Timeline</span>
-
-            <span id="timeline-time">0.000s  |  Frame 0</span>
-
-            <div id="timeline-zoom-wrap">
-                <label for="timelineZoom">Zoom</label>
-                <input type="range" id="timelineZoom" min="1" max="20" value="4">
-            </div>
-        </div>
-
-        <div id="timeline-track">
-            <canvas id="timelineCanvas"></canvas>
-            <div id="timeline-playhead"></div>
-        </div>
-
-    </div>
-
-    <script src="profiler.js"></script>
-    <script src="touching.js"></script>
-    <script src="physics.js"></script>
-    <script src="levelRenderer.js"></script>
-    <script src="game.js"></script>
-    <script src="tas.js"></script>
-
-</body>
-</html> -->
-
 <!DOCTYPE html>
 <meta charset="UTF-8">
 <html>
@@ -517,8 +71,8 @@
             position: static;
             background: rgba(20, 20, 20, 0.9);
             border: 2px solid #ffff00;
-            padding: 12px;
-            font-size: 12px;
+            padding: 7px;
+            font-size: 10px;
             line-height: 1.6;
             z-index: 1000;
         }
@@ -835,7 +389,8 @@
         }
 
         #tab-content-inputs.hidden,
-        #tab-content-solver.hidden {
+        #tab-content-solver.hidden,
+        #tab-content-help.hidden {
             display: none !important;
         }
 
@@ -1275,6 +830,126 @@
             width: 60px;
             flex: 0 0 auto;
         }
+
+        /* ── Help tab ───────────────────────────────────────── */
+
+        #tab-content-help {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0;
+            border-bottom: none;
+        }
+
+        #tab-content-help.hidden { display: none !important; }
+
+        #tab-content-help::-webkit-scrollbar { width: 5px; }
+        #tab-content-help::-webkit-scrollbar-track { background: #111; }
+        #tab-content-help::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+        .help-section {
+            padding: 12px 14px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .help-section:last-child { border-bottom: none; }
+
+        .help-heading {
+            color: #ffff00;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #222;
+        }
+
+        .help-para {
+            font-size: 11px;
+            color: #888;
+            line-height: 1.7;
+            margin-bottom: 6px;
+        }
+
+        .help-para:last-child { margin-bottom: 0; }
+
+        .help-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .help-table td {
+            padding: 3px 6px;
+            vertical-align: top;
+        }
+
+        .help-table tr:nth-child(even) td { background: #0d0d0d; }
+
+        .help-key {
+            color: #ffff00;
+            font-weight: bold;
+            white-space: nowrap;
+            min-width: 80px;
+        }
+
+        .help-val {
+            color: #00ff55;
+            white-space: nowrap;
+        }
+
+        .help-desc {
+            color: #888;
+        }
+
+        .help-code {
+            color: #00ff55;
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 3px;
+            padding: 1px 5px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .help-badge {
+            display: inline-block;
+            background: #1a1a00;
+            border: 1px solid #444400;
+            color: #ffff00;
+            border-radius: 3px;
+            padding: 0 5px;
+            font-size: 10px;
+            margin-right: 4px;
+            font-weight: bold;
+        }
+
+        .help-tip {
+            font-size: 10px;
+            color: #444;
+            margin-top: 6px;
+            line-height: 1.6;
+            border-left: 2px solid #222;
+            padding-left: 8px;
+        }
+
+        .help-tip em { color: #666; font-style: normal; }
+
+        .help-example-block {
+            background: #0a0a0a;
+            border: 1px solid #1e1e1e;
+            border-radius: 3px;
+            padding: 8px 10px;
+            margin-top: 6px;
+            font-size: 11px;
+            line-height: 1.9;
+        }
+
+        .help-example-block .ex-input { color: #00ff55; }
+        .help-example-block .ex-comment { color: #444; }
     </style>
 </head>
 <body>
@@ -1311,6 +986,10 @@
                             <span class="control-key">4-6</span>
                             <span class="control-desc">Load State</span>
                         </div>
+                        <div class="control-item">
+                            <span class="control-key">H</span>
+                            <span class="control-desc">Toggle Handplay Mode</span>
+                        </div>
                     </div>
                     <div class="status-display">
                         <div class="status-item"><strong>Frame:</strong> <span id="frameCounter">0</span></div>
@@ -1320,6 +999,7 @@
                             <input type="number" id="fpsInput" class="fps-input" value="30" min="1">
                         </div>
                         <div class="status-item"><strong>Status:</strong> <span id="statusDisplay">Loading</span></div>
+                        <div class="status-item" id="handplayStatusRow" style="display:none"><strong>Keys:</strong> <span id="handplayKeysDisplay">·</span></div>
                     </div>
                 </div>
             </div>
@@ -1336,6 +1016,7 @@
             <div id="right-tabs">
                 <button class="rtab active" id="tab-inputs-btn" onclick="switchRightTab('inputs')">Frame Inputs</button>
                 <button class="rtab"        id="tab-solver-btn" onclick="switchRightTab('solver')">Brute Force Solver</button>
+                <button class="rtab"        id="tab-help-btn"   onclick="switchRightTab('help')">Help</button>
             </div>
 
             <!-- Input editor tab -->
@@ -1483,6 +1164,298 @@
             </div>
             <!-- end solver tab -->
 
+            <!-- Help tab -->
+            <div id="tab-content-help" class="tab-content hidden">
+
+                <!-- Overview -->
+                <div class="help-section">
+                    <div class="help-heading">What is this?</div>
+                    <p class="help-para">
+                        The <strong style="color:#ffff00">Appel TAS Editor</strong> lets you record, edit, and replay
+                        frame-perfect inputs for the game <em style="color:#aaa">Appel</em>.
+                        Write inputs in the <strong style="color:#ffff00">Frame Inputs</strong> tab,
+                        watch them play out on the canvas, scrub the timeline, and use the
+                        <strong style="color:#ffff00">Brute Force Solver</strong> to automatically find better sequences.
+                    </p>
+                    <p class="help-para">
+                        The layout is split into a <strong style="color:#ffff00">left panel</strong> (game canvas + player state)
+                        and a <strong style="color:#ffff00">right panel</strong> (level code, inputs/solver, replay).
+                        A <strong style="color:#ffff00">timeline</strong> runs along the bottom showing every frame's key state.
+                    </p>
+                </div>
+
+                <!-- Getting started -->
+                <div class="help-section">
+                    <div class="help-heading">Getting Started</div>
+                    <table class="help-table">
+                        <tr>
+                            <td class="help-key">1. Load a level</td>
+                            <td class="help-desc">Paste a level code into the <span class="help-code">Level Code</span> field at the top-right and press Enter.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">2. Write inputs</td>
+                            <td class="help-desc">Switch to the <span class="help-code">Frame Inputs</span> tab and type your input sequence (see syntax below).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">3. Playback</td>
+                            <td class="help-desc">Press <span class="help-badge">Q</span> to restart from frame 0. The game runs automatically at the current FPS.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">4. Export</td>
+                            <td class="help-desc">The <span class="help-code">Replay Code</span> box updates automatically. Click <span class="help-code">Import Replay Code</span> to load one back in.</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Keyboard shortcuts -->
+                <div class="help-section">
+                    <div class="help-heading">Keyboard Shortcuts</div>
+                    <table class="help-table">
+                        <tr>
+                            <td class="help-key">Q</td>
+                            <td class="help-desc">Restart the TAS from frame 0.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">V</td>
+                            <td class="help-desc">Pause — or, if already paused, advance exactly one frame (frame-step).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">B</td>
+                            <td class="help-desc">Resume playback (unpause).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">C</td>
+                            <td class="help-desc">Step <em>back</em> one frame (rewind by one).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">1 · 2 · 3</td>
+                            <td class="help-desc">Save state to slot 1, 2, or 3 at the current frame.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">4 · 5 · 6</td>
+                            <td class="help-desc">Load state from slot 1, 2, or 3 (loads the frame saved with that slot).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">H</td>
+                            <td class="help-desc">Toggle <strong style="color:#ff9900">Handplay Mode</strong> — lets you record inputs live by holding keys and pressing V.</td>
+                        </tr>
+                    </table>
+                    <p class="help-tip">Save states are stored in memory only — they are lost on page refresh.</p>
+                </div>
+
+                <!-- Input syntax -->
+                <div class="help-section">
+                    <div class="help-heading">Frame Input Syntax</div>
+                    <p class="help-para">Each <em style="color:#aaa">token</em> is a set of keys followed by a frame count.
+                    Keys are <span class="help-code">W</span> (up/jump), <span class="help-code">A</span> (left),
+                    <span class="help-code">S</span> (down), <span class="help-code">D</span> (right).
+                    They are case-insensitive.</p>
+
+                    <table class="help-table">
+                        <tr>
+                            <td class="help-val">D1</td>
+                            <td class="help-desc">Hold D (right) for 1 frame.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-val">WD5</td>
+                            <td class="help-desc">Hold W + D simultaneously for 5 frames.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-val">_6</td>
+                            <td class="help-desc">No keys held for 6 frames (underscore = empty).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-val">6</td>
+                            <td class="help-desc">Also means no keys for 6 frames (number alone).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-val">(D1 SD1)50</td>
+                            <td class="help-desc">Repeat the contents of the parentheses 50 times.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-val">break</td>
+                            <td class="help-desc">Auto-pauses playback at this frame so you can inspect the state.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-val">// comment</td>
+                            <td class="help-desc">Everything after <span class="help-code">//</span> on a line is ignored.</td>
+                        </tr>
+                    </table>
+
+                    <div class="help-example-block">
+                        <span class="ex-input">D1 WD5</span>  <span class="ex-comment">// right for 1 frame, then jump-right for 5</span><br>
+                        <span class="ex-input">_6 W1 _3</span>  <span class="ex-comment">// wait 6, jump 1, wait 3</span><br>
+                        <span class="ex-input">(D1 _1)10</span>  <span class="ex-comment">// tap D every other frame, 10 times</span><br>
+                        <span class="ex-input">break</span>  <span class="ex-comment">// pause here to check position</span><br>
+                        <span class="ex-input">SD8</span>  <span class="ex-comment">// crouch + right for 8 frames</span>
+                    </div>
+
+                    <p class="help-tip">The active token is highlighted in yellow in the editor as the TAS plays.</p>
+                </div>
+
+                <!-- Player state panel -->
+                <div class="help-section">
+                    <div class="help-heading">Player State Panel (left panel)</div>
+                    <p class="help-para">Updates every frame with the physics engine's internal state. Key fields:</p>
+                    <table class="help-table">
+                        <tr><td class="help-key">PLAYER_X / Y</td><td class="help-desc">Pixel position of the player.</td></tr>
+                        <tr><td class="help-key">PLAYER_SX / SY</td><td class="help-desc">Horizontal / vertical speed (sub-pixels per frame).</td></tr>
+                        <tr><td class="help-key">is_jumping</td><td class="help-desc">Frames since the last jump started.</td></tr>
+                        <tr><td class="help-key">is_falling</td><td class="help-desc">Frames spent falling (airborne without jumping).</td></tr>
+                        <tr><td class="help-key">player_state</td><td class="help-desc">Internal state code (idle, run, jump, fall, dead…).</td></tr>
+                        <tr><td class="help-key">player_wall</td><td class="help-desc">Which wall the player is touching, if any.</td></tr>
+                        <tr><td class="help-key">flipped</td><td class="help-desc">Whether the sprite is mirrored (facing left).</td></tr>
+                        <tr><td class="help-key">friction</td><td class="help-desc">Current friction coefficient applied this frame.</td></tr>
+                    </table>
+                </div>
+
+                <!-- Timeline -->
+                <div class="help-section">
+                    <div class="help-heading">Timeline</div>
+                    <p class="help-para">
+                        The strip at the bottom shows every frame as a coloured band — each key combination gets its own colour.
+                        The yellow <strong style="color:#ffff00">playhead</strong> follows the current frame.
+                    </p>
+                    <table class="help-table">
+                        <tr><td class="help-key">Click / drag</td><td class="help-desc">Seek to any frame instantly.</td></tr>
+                        <tr><td class="help-key">Zoom slider</td><td class="help-desc">Controls how many pixels represent one frame (1–20).</td></tr>
+                    </table>
+                </div>
+
+                <!-- Brute force solver -->
+                <div class="help-section">
+                    <div class="help-heading">Brute Force Solver</div>
+                    <p class="help-para">
+                        The solver searches all possible key combinations over a short window of frames
+                        to find the sequence that best satisfies your <em style="color:#aaa">Optimization Goal</em>.
+                    </p>
+                    <table class="help-table">
+                        <tr>
+                            <td class="help-key">Player State</td>
+                            <td class="help-desc">Captures the physics state at the current TAS frame as the search starting point. Click <span class="help-code">Get Current Player State</span>.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Search Depth</td>
+                            <td class="help-desc">Number of frames to search ahead. Higher = slower but potentially better results.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Optimization Goal</td>
+                            <td class="help-desc">A JS expression evaluated at the final frame. Any player-state field can be used (e.g. <span class="help-code">PLAYER_X</span>, <span class="help-code">Math.abs(PLAYER_SX)</span>). Choose Maximize or Minimize.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Frame Pins</td>
+                            <td class="help-desc">Lock specific frames to certain inputs. Format: <span class="help-code">frame:constraint</span>. Examples: <span class="help-code">1:+W</span> (W must be held on frame 1), <span class="help-code">2:-D</span> (D must NOT be held), <span class="help-code">3:WD</span> (exact W+D only).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Kill Zone</td>
+                            <td class="help-desc">A JS expression — if it evaluates to <span class="help-code">true</span> on any frame, that branch is pruned early (e.g. <span class="help-code">PLAYER_X &gt; 300</span> to discard runs that go too far right).</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Enabled Combos</td>
+                            <td class="help-desc">Toggle which key combinations the solver is allowed to try. The number cap limits how many total frames that combo may appear in the result.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">TAS Output</td>
+                            <td class="help-desc">The best sequence found is shown here in TAS format, ready to paste into the Frame Inputs editor.</td>
+                        </tr>
+                    </table>
+                    <p class="help-tip">Preset goals: <em>Max X</em> = move as far right as possible · <em>Max Speed</em> = maximise horizontal speed · <em>X and SX</em> = weighted position + speed combo.</p>
+                </div>
+
+                <!-- Replay code -->
+                <div class="help-section">
+                    <div class="help-heading">Replay Code</div>
+                    <p class="help-para">
+                        The <strong style="color:#ffff00">Replay Code</strong> box (Frame Inputs tab, bottom) contains the game's
+                        native binary-encoded replay format.
+                        It is regenerated automatically whenever your inputs change.
+                    </p>
+                    <p class="help-para">
+                        To load someone else's replay, paste it into the Replay Code box and click
+                        <span class="help-code">Import Replay Code</span>. This converts it back to TAS-format inputs
+                        in the editor so you can inspect or modify it frame by frame.
+                    </p>
+                </div>
+
+                <!-- Handplay Mode -->
+                <div class="help-section">
+                    <div class="help-heading">Handplay Mode</div>
+                    <p class="help-para">
+                        Press <span class="help-code">H</span> to toggle Handplay Mode (status turns <strong style="color:#ff9900">orange</strong>).
+                        In this mode you record inputs frame-by-frame at the current playhead position —
+                        works when the TAS is <em>paused</em>.
+                    </p>
+                    <table class="help-table">
+                        <tr>
+                            <td class="help-key">Hold W/A/S/D</td>
+                            <td class="help-desc">The keys you physically hold are shown in the <strong>Keys</strong> status field.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">V (while in Handplay)</td>
+                            <td class="help-desc">
+                                Commits one frame with the currently-held keys, <em>inserted at the playhead position</em>
+                                rather than appended to the end.
+                                If the playhead is inside an existing token with a different combo, that token is split.
+                                If the combos match, the token is simply extended by 1.
+                                The playhead then advances one frame.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">H again</td>
+                            <td class="help-desc">Exit Handplay Mode and return to normal operation.</td>
+                        </tr>
+                    </table>
+                    <p class="help-tip">Tip: seek to any frame mid-sequence with the timeline, then use Handplay to overwrite or insert frames there without touching the rest of the TAS.</p>
+                </div>
+
+                <!-- Camera pan -->
+                <div class="help-section">
+                    <div class="help-heading">Camera Pan</div>
+                    <p class="help-para">
+                        You can freely reposition the camera at any time — including <em>while paused or frame-stepping</em>.
+                    </p>
+                    <table class="help-table">
+                        <tr>
+                            <td class="help-key">Click &amp; drag canvas</td>
+                            <td class="help-desc">Pan the camera in any direction. Works during playback and while paused.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Double-click canvas</td>
+                            <td class="help-desc">Snap the camera back to the default (player-following) position.</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Tips -->
+                <div class="help-section">
+                    <div class="help-heading">Tips &amp; Tricks</div>
+                    <table class="help-table">
+                        <tr>
+                            <td class="help-key">Use <span class="help-code">break</span></td>
+                            <td class="help-desc">Place a <span class="help-code">break</span> token just before a tricky section. The TAS pauses automatically so you can study the player state before continuing.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Save states</td>
+                            <td class="help-desc">Save (1–3) at a known-good frame, experiment with V/C to step forward/back, then reload (4–6) if things go wrong.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Lower FPS</td>
+                            <td class="help-desc">Drop the FPS field to 1–5 to watch slow-motion and read each frame's state clearly.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Solver + paste</td>
+                            <td class="help-desc">Pause at a tough spot, run the solver for a few frames, copy the output, and paste it into the inputs editor at that position.</td>
+                        </tr>
+                        <tr>
+                            <td class="help-key">Parentheses</td>
+                            <td class="help-desc">Use <span class="help-code">(…)N</span> to repeat long patterns compactly — great for corridors or repeated jumps.</td>
+                        </tr>
+                    </table>
+                </div>
+
+            </div>
+            <!-- end help tab -->
+
         </div>
         <!-- end right-panel -->
 
@@ -1512,19 +1485,24 @@
         function switchRightTab(name) {
             const inputsContent = document.getElementById('tab-content-inputs');
             const solverContent = document.getElementById('tab-content-solver');
+            const helpContent   = document.getElementById('tab-content-help');
             const inputsBtn     = document.getElementById('tab-inputs-btn');
             const solverBtn     = document.getElementById('tab-solver-btn');
+            const helpBtn       = document.getElementById('tab-help-btn');
+
+            // Hide all, deactivate all
+            [inputsContent, solverContent, helpContent].forEach(el => el.classList.add('hidden'));
+            [inputsBtn, solverBtn, helpBtn].forEach(btn => btn.classList.remove('active'));
 
             if (name === 'inputs') {
                 inputsContent.classList.remove('hidden');
-                solverContent.classList.add('hidden');
                 inputsBtn.classList.add('active');
-                solverBtn.classList.remove('active');
-            } else {
-                inputsContent.classList.add('hidden');
+            } else if (name === 'solver') {
                 solverContent.classList.remove('hidden');
                 solverBtn.classList.add('active');
-                inputsBtn.classList.remove('active');
+            } else {
+                helpContent.classList.remove('hidden');
+                helpBtn.classList.add('active');
             }
         }
     </script>
