@@ -770,6 +770,21 @@ class TAEditor {
             if (e.ctrlKey || e.metaKey) return;
 
             switch (e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    if (this.frameStepMode) {
+                        // Resume playback
+                        this.paused        = false;
+                        this.frameStepMode = false;
+                        this.stepNextFrame = false;
+                        this.updateStatus();
+                    } else {
+                        // Pause
+                        this.paused        = true;
+                        this.frameStepMode = true;
+                        this.updateStatus();
+                    }
+                    break;
                 case 'KeyQ':    e.preventDefault(); this.restartTAS();  break;
                 case 'KeyV':
                     e.preventDefault();
