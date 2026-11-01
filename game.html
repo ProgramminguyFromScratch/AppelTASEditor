@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Appel</title>
+    <style>
+        body {
+            margin: 0;
+            background: #111;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            background: #000;
+            border: 2px solid #444;
+        }
+        #inputs { position: absolute; top: 4px; left: 4px; color: #fff; font-size: 12px; z-index: 1; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+</style>
+</head>
+<body>
+    <div id="inputs">
+        Level code: <input type="text" id="levelCode" size="60"><br>
+        Replay code (optional, blank = play manually): <input type="text" id="replayCode" size="60">
+        <button id="loadBtn">Load</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="profiler.js"></script>
+    <script src="scratch_touch_core.js"></script>
+    <script src="touching.js"></script>
+    <script src="saws.js"></script>
+    <script src="walkers.js"></script>
+    <script src="worms.js"></script>
+    <script src="eyeLaunchers.js"></script>
+    <script src="physics.js"></script>
+    <script src="hitboxes.js"></script>
+    <script src="levelRenderer.js"></script>
+    <script src="sounds.js"></script>
+    <script src="game.js"></script>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const game = new Game('gameCanvas');
+        const levelBox = document.getElementById('levelCode');
+        const replayBox = document.getElementById('replayCode');
+        levelBox.value = params.get("level") || "1234689196Z2Z589Z71Z1Z1Z4Z2Z1Z1Z189Z2Z1Z1Z2Z23Z1Z1Z2Z2Z1Z1Z189Z2Z1Z1Z5Z2Z1Z1Z37429ZZ1Z787Z3Z1Z1Z37628ZZB788Zg1ZB590Zg1ZZZ62Z67";
+        replayBox.value = params.get("replay") || "";
+        function loadGame() {
+            game.init(levelBox.value.trim(), replayBox.value);
+        }
+        document.getElementById('loadBtn').addEventListener('click', loadGame);
+        for (const el of [levelBox, replayBox]) {
+            el.addEventListener('keydown', e => e.stopPropagation());
+            el.addEventListener('keyup', e => e.stopPropagation());
+        }
+        loadGame();
+</script>
+</body>
+</html>
